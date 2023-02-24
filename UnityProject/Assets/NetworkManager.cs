@@ -8,6 +8,8 @@ using System;
 using System.Text;
 using TMPro;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace GameNetClient
 {
@@ -30,6 +32,8 @@ namespace GameNetClient
         // Login Screen
         public Button LoginBtn;
         public TMP_InputField userNameInput;
+
+        CancellationTokenSource tokenSource;
 
         // Start is called before the first frame update
         void Start()
@@ -57,7 +61,6 @@ namespace GameNetClient
 
         public async void ConnectToServer()
         {
-
             Debug.Log("I will try to connect");
             string ip = "127.0.0.1";
             var address = IPAddress.Parse(ip);
@@ -65,7 +68,7 @@ namespace GameNetClient
 
             try
             {
-                await clientSocket.ConnectAsync(address, Port);
+                await Task.Run(() => clientSocket.ConnectAsync(address, Port), tokenSource.Token);
             }
             catch (SocketException e)
             {
@@ -76,7 +79,6 @@ namespace GameNetClient
             showScreen(1);
             
             Utilities.Debugger("Connected!");
-
         }
 
         public void SendLoginPacket()
@@ -206,6 +208,11 @@ namespace GameNetClient
                     screensParent[i].SetActive(false);
                 }
             }
+        }
+
+        private void OnDisable()
+        {
+            tokenSource.Cancel();
         }
     }
 }
