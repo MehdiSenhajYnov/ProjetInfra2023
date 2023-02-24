@@ -1,1 +1,27 @@
+name: CI/CD Pipeline
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build application
+      run: npm run build
+
+    - name: Deploy to production
+      uses: GoogleCloudPlatform/github-actions/deploy@main
+      with:
+        project_id: my-project-id
+        app_yaml_path: app.yaml
+        cloud_build_timeout: 1800s
