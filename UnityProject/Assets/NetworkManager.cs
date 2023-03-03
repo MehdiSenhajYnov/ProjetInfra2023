@@ -76,6 +76,9 @@ namespace GameNetClient
                 try
                 {
                     clientSocket.Connect(address, Port);
+                    showScreen(1);
+                    Utilities.Debugger("Connected!");
+                    Debug.Log("Connected");
                 }
                 catch (SocketException e)
                 {
@@ -85,10 +88,7 @@ namespace GameNetClient
                 }
             }, tokenSource.Token);
 
-            showScreen(1);
             
-            Utilities.Debugger("Connected!");
-            Debug.Log("Connected");
         }
 
         public void SendLoginPacket()

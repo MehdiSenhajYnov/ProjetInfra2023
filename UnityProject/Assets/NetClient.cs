@@ -88,10 +88,9 @@ namespace GameNetClient {
         public void SendString(string text)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(text);
-            //Utilities.Debugger("Sent To Server : " + text);
+
             clientSocket.Send(buffer, 0, buffer.Length, SocketFlags.None);
-            //dataSent++;
-            //Utilities.Debugger(dataSent);
+
         }
 
         private void Update()
