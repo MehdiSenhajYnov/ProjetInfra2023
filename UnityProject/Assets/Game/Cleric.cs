@@ -1,6 +1,7 @@
 using System;
 namespace GameNetClient
 {
+    [Serializable]
     public class Cleric : Character, IHealer
     {
         public float Mana = 100;

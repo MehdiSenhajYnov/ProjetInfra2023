@@ -1,7 +1,8 @@
 using System;
 namespace GameNetClient
 {
-    public class Paladin: Character, ITank, IHealer
+    [Serializable]
+    public class Paladin : Character, ITank, IHealer
     {
         public int HealPower {get; set;}
         public int AttackPower {get; set;}

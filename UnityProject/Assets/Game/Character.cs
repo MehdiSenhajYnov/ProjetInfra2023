@@ -1,6 +1,7 @@
 using System;
 namespace GameNetClient
 {
+    [Serializable]
     public abstract class Character 
     {
         public string Name = "";

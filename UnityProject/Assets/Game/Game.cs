@@ -7,7 +7,7 @@ using TMPro;
 
 namespace GameNetClient
 {
-    public class Game : MonoBehaviour
+    public class Game : Singleton<Game>
     {
         public Character PlayerOne;
         public Character PlayerTwo; 
@@ -21,16 +21,41 @@ namespace GameNetClient
         public string plyrOneName = "";
         public string plyrTwoName = "";
 
-        public NetworkManager client;
+        //public NetworkManager client;
 
         public Image charImage;
         public List<Sprite> charImages = new List<Sprite>();
 
-        public TMP_InputField PlayerName;
+
         public Button MoveOneBtn;
         public Button MoveTwoBtn;
+        [SerializeField] PlyrMoves plyrMoves;
+
+        [SerializeField] RectTransform HealthOne;
+        [SerializeField] RectTransform HealthTwo;
+
+        [SerializeField] List<Sprite> charSprites = new List<Sprite>();
+        [SerializeField] Image PlayerOneSprite;
+        [SerializeField] Image PlayerTwoSprite;
+
+        public int MyPlayerClass;
+
+        public Image GetPlayerOneSprite()
+        {
+            return PlayerOneSprite;
+        }
+
+        public Image GetPlayerTwoSprite()
+        {
+            return PlayerTwoSprite;
+        }
+
         private void Start()
         {
+            plyrMoves.ChangeAllBtnState(false);
+            // XMax 165 Y = 10
+            HealthOne.sizeDelta = new Vector2(165, 10);
+            HealthTwo.sizeDelta = new Vector2(165, 10);
             //GameBegin();
         }
 
@@ -48,25 +73,26 @@ namespace GameNetClient
 
         }
 
+        public int plyrToSet;
 
-        public void SetName(int plyrToSet) 
+        public bool CheckName(string playernameinput) 
         {
-            Utilities.Debugger("THE GAME BEGINS");
-            PlayerName.gameObject.SetActive(true);
-            if (plyrToSet == 1) {
-                Utilities.Debugger("WHAT IS YOUR NAME PLAYER ONE ?");
-                plyrOneName = GetName();
+            if (string.IsNullOrEmpty(playernameinput) || string.IsNullOrWhiteSpace(playernameinput)) return false;
+
+            if (plyrToSet == 1)
+            {
+                plyrOneName = playernameinput;
                 PlyrId = 1;
-            } else if (plyrToSet == 2) {
-                Utilities.Debugger("WHAT IS YOUR NAME PLAYER TWO ?");
-                plyrTwoName = GetName();
+
+            }
+            else if (plyrToSet == 2)
+            {
+                plyrTwoName = playernameinput;
                 PlyrId = 2;
             }
-        }
 
-        public string GetName() 
-        {            
-            return PlayerName.text;
+            //NetworkManager.Instance.sendUserName();
+            return true;
         }
 
         public void PlyrGetAtkInput(byte TypeOfPlyrInput) {
@@ -96,8 +122,10 @@ namespace GameNetClient
         }
 
         public void choiceOneOrTwo() {
+
             MoveOneBtn.gameObject.SetActive(true);
             MoveTwoBtn.gameObject.SetActive(true);
+
             /*string PlyrInput = "";
 
             PlyrInput = Console.ReadLine();
@@ -111,6 +139,7 @@ namespace GameNetClient
                 Utilities.Debugger("Not valid input, try again");
                 return choiceOneOrTwo();
             }*/
+
         }
 
 
@@ -172,33 +201,63 @@ namespace GameNetClient
 
         public void UpdatePlyrsFromServer(byte[] byteInfo) {
             // PTD = Player to display
-            
+
             if (byteInfo[0] == 1) {
                 PlayerOne = new Warrior(plyrOneName, (int)byteInfo[1]);
+                SetPlyrImage(0, PlayerOneSprite, PlayerTwoSprite);
             }
             if (byteInfo[0] == 2) {
                 PlayerOne = new Cleric(plyrOneName, (int)byteInfo[1]);
+                SetPlyrImage(1, PlayerOneSprite, PlayerTwoSprite);
             }
             if (byteInfo[0] == 3) {
                 PlayerOne = new Paladin(plyrOneName, (int)byteInfo[1]);
+                SetPlyrImage(2, PlayerOneSprite, PlayerTwoSprite);
             }
             PlayerOne.TakeDamage((int)(byteInfo[1] - byteInfo[2]));
             PlayerOne.SetUniqueValue(byteInfo[3]);
 
             if (byteInfo[4] == 1) {
                 PlayerTwo = new Warrior(plyrTwoName, (int)byteInfo[5]);
+                SetPlyrImage(0, PlayerTwoSprite, PlayerOneSprite);
             }
             if (byteInfo[4] == 2) {
                 PlayerTwo = new Cleric(plyrTwoName, (int)byteInfo[5]);
+                SetPlyrImage(1, PlayerTwoSprite, PlayerOneSprite);
             }
             if (byteInfo[4] == 3) {
                 PlayerTwo = new Paladin(plyrTwoName, (int)byteInfo[5]);
+                SetPlyrImage(2, PlayerTwoSprite, PlayerOneSprite);
             }
             PlayerTwo.TakeDamage((int)(byteInfo[5] - byteInfo[6]));
             PlayerTwo.SetUniqueValue(byteInfo[7]);
+
+
+
+            // Mon joueur est toujours celui en bas à gauche
+            // Health : MaxHealth =  x : 165
+            if (PlyrId == 1)
+            {
+                HealthOne.sizeDelta = new Vector2(PlayerOne.Health * 165 / PlayerOne.MaxHealth, 10);
+                HealthTwo.sizeDelta = new Vector2(PlayerTwo.Health * 165 / PlayerTwo.MaxHealth, 10);
+            } else
+            {
+                HealthTwo.sizeDelta = new Vector2(PlayerOne.Health * 165 / PlayerOne.MaxHealth, 10);
+                HealthOne.sizeDelta = new Vector2(PlayerTwo.Health * 165 / PlayerTwo.MaxHealth, 10);
+            }
         }
 
-
+        public void SetPlyrImage(int ImageToSet, Image PlyrOneImage, Image PlyrTwoImage)
+        {
+            if (PlyrId == 1)
+            {
+                PlyrOneImage.sprite = charSprites[ImageToSet];
+            }
+            else
+            {
+                PlyrTwoImage.sprite = charSprites[ImageToSet];
+            }
+        }
         public void DisplayAtkChoiseOfCharacter(byte characterToUse) {
             Utilities.Debugger("\n What Do you want to do?");
             if (characterToUse == 1) {
@@ -221,7 +280,6 @@ namespace GameNetClient
         }
         public void PrintCleric() {
             charImage.sprite = charImages[1];
-
         }
         public void PrintPaladin() {
             charImage.sprite = charImages[2];

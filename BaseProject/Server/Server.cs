@@ -106,6 +106,11 @@ namespace GameNetServer
             }
             Console.Write("\n");
 
+            if (Data.Length <= 0) {
+                Console.Write("Client Disconnected");
+                return;
+            }
+
             if ( Data[0] == 1) {
                 Game.PlyrChoice(Data[0], Data[1]);
             }

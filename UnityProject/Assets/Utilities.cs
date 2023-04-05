@@ -2,8 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-public class Utilities : MonoBehaviour
+public class Utilities : Singleton<Utilities>
 {
+    private void Start()
+    {
+        showScreen(ScreenGame.Home);
+    }
     private static TMP_Text DebugText;
     public static TMP_Text _debugText
     {
@@ -30,4 +34,47 @@ public class Utilities : MonoBehaviour
     {
         _debugText.gameObject.SetActive(false);
     }
+
+    public List<GameObject> screensParent = new List<GameObject>();
+
+    /*
+    public void showScreen(int indexOfScreen)
+    {
+        for (int i = 0; i < screensParent.Count; i++)
+        {
+            if (i == indexOfScreen)
+            {
+                screensParent[i].SetActive(true);
+            }
+            else
+            {
+                screensParent[i].SetActive(false);
+            }
+        }
+    }
+    */
+    
+    public void showScreen(ScreenGame indexOfScreen)
+    {
+        for (int i = 0; i < screensParent.Count; i++)
+        {
+            if (i == (int)indexOfScreen)
+            {
+                screensParent[i].SetActive(true);
+            }
+            else
+            {
+                screensParent[i].SetActive(false);
+            }
+        }
+    }
+
+}
+public enum ScreenGame
+{
+    Home,
+    Menu,
+    Login,
+    Game,
+    Winner,
 }

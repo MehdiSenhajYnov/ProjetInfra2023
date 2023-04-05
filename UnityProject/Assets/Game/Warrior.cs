@@ -1,6 +1,7 @@
 using System;
 namespace GameNetClient
 {
+    [Serializable]
     public class Warrior : Character, ITank
     {
         public bool Bravery = false; 

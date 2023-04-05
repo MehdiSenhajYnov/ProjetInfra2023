@@ -8,12 +8,11 @@ using System;
 using System.Text;
 using TMPro;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
+/*
 namespace GameNetClient
 {
-    public class NetworkManager : MonoBehaviour
+    
+    public class NetworkManager : Singleton<NetworkManager>
     {
         public Game game;
 
@@ -33,12 +32,11 @@ namespace GameNetClient
         public Button LoginBtn;
         public TMP_InputField userNameInput;
 
-        CancellationTokenSource tokenSource;
+ 
 
         // Start is called before the first frame update
         void Start()
         {
-            tokenSource = new CancellationTokenSource();
             int counter = 1;
             foreach (ActionCodes oneAction in Enum.GetValues(typeof(ActionCodes)))
             {
@@ -50,45 +48,72 @@ namespace GameNetClient
             showScreen(0);
 
 
-            ConnectBtn.onClick.AddListener(ConnectToServer);
+            ConnectBtn.onClick.AddListener(() => StartCoroutine(ConnectToServer()));
             LoginBtn.onClick.AddListener(SendLoginPacket);
 
 
 
             Utilities.DesactivateDebugger();
-            Task.Run(() =>
-            {
-                ReceiveResponse();
-            }, tokenSource.Token);
+            //StartCoroutine(ReceiveResponse());
+
         }
 
 
 
-        public async void ConnectToServer()
+        public IEnumerator ConnectToServer()
         {
             Debug.Log("I will try to connect");
             string ip = "127.0.0.1";
             var address = IPAddress.Parse(ip);
             Debug.Log("Connection attempt to " + ip + ":" + Port + "...");
 
-            await Task.Run(() =>
+            yield return clientSocket.ConnectAsync(address, Port);
+            setBeginToReceiveEvent();
+            if (clientSocket.Connected)
             {
-                try
-                {
-                    clientSocket.Connect(address, Port);
-                    showScreen(1);
-                    Utilities.Debugger("Connected!");
-                    Debug.Log("Connected");
-                }
-                catch (SocketException e)
-                {
-                    Debug.Log("Connexion Echoué!");
-                    Debug.Log(e.Message);
-                    return;
-                }
-            }, tokenSource.Token);
+                showScreen(1);
+                Utilities.Debugger("Connected!");
+            }
+        }
 
-            
+        void setBeginToReceiveEvent()
+        {
+            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+            args.SetBuffer(new byte[1024], 0, 1024);
+
+            args.Completed += (object sender, SocketAsyncEventArgs e) =>
+            {
+                onReceivedData(e);
+            };
+
+            bool willRaiseEvent = clientSocket.ReceiveAsync(args);
+            if (!willRaiseEvent)
+            {
+                // La méthode ReceiveAsync a retourné false, ce qui signifie que la réception a été complétée de manière synchrone
+                onReceivedData(args);
+                //args.Completed(clientSocket, args);
+            }
+        }
+
+        void onReceivedData(SocketAsyncEventArgs e)
+        {
+            if (e.SocketError == SocketError.Success)
+            {
+                // Les données ont été reçues avec succès
+                byte[] receivedData = new byte[e.BytesTransferred];
+                Array.Copy(e.Buffer, e.Offset, receivedData, 0, e.BytesTransferred);
+                StartCoroutine(ReceiveResponse(receivedData));
+            }
+            else
+            {
+                // Une erreur s'est produite lors de la réception
+                Console.WriteLine("Erreur de réception : {0}", e.SocketError);
+            }
+        }
+
+        public void onConnected()
+        {
+
         }
 
         public void SendLoginPacket()
@@ -108,91 +133,62 @@ namespace GameNetClient
 
         void Update()
         {
-            //ReceiveResponse();
         }
 
-        public void ReceiveResponse()
+
+        public IEnumerator ReceiveResponse(byte[] data)
         {
-            while(true)
-            {
-                if (clientSocket == null || !clientSocket.Connected) continue;
-                var buffer = new byte[2048];
-                int received = clientSocket.Receive(buffer, SocketFlags.None);
-                if (received == 0)
-                {
-                    continue;
-                }
 
-                var data = new byte[received];
-                Array.Copy(buffer, data, received);
-
+            if (clientSocket == null || !clientSocket.Connected) {
+                yield break;
+            }
             
-                // Nom du joueur adveresaire
-                if (data[0] == 48 && data.Length > 1)
+            // Nom du joueur adveresaire
+            if (data[0] == 48 && data.Length > 1)
+            {
+                string text = Encoding.ASCII.GetString(data.Skip(1).Take(data.Length - 1).ToArray());
+                if (game.plyrOneName == "")
                 {
-                    string text = Encoding.ASCII.GetString(data.Skip(1).Take(data.Length - 1).ToArray());
-                    if (game.plyrOneName == "")
-                    {
-                        game.plyrOneName = text;
-                        Utilities.Debugger("Your enemy is : " + game.plyrOneName);
-                    }
-                    else if (game.plyrTwoName == "")
-                    {
-                        game.plyrTwoName = text;
-                        Utilities.Debugger("Your enemy is : " + game.plyrTwoName);
-                    }
-                    continue;
+                    game.plyrOneName = text;
+                    Utilities.Debugger("Your enemy is : " + game.plyrOneName);
                 }
-
-                /*
-                if (data[0] == 5)
+                else if (game.plyrTwoName == "")
                 {
-                    Game.UpdatePlyrsFromServer(data.Skip(1).ToArray());
-                    int PlyrInput = Game.PlyrGetAtkInput((byte)(myID == 1 ? data[1] : data[5]));
-                    int CiblePlyr = Game.CibleOfAtkInput();
-                    SendByte(new byte[] { 4, (byte)PlyrInput, (byte)CiblePlyr });
-
-                    return;
+                    game.plyrTwoName = text;
+                    Utilities.Debugger("Your enemy is : " + game.plyrTwoName);
                 }
-
-                if (data[0] == 6)
-                {
-                    Game.UpdatePlyrsFromServer(data.Skip(1).ToArray());
-                    Console.Write("\n");
-                    Console.WriteLine(Game.PlayerOne.ToString());
-                    Console.WriteLine(Game.PlayerTwo.ToString());
-                    Console.WriteLine("Waiting for " + (myID == 1 ? Game.plyrTwoName : Game.plyrOneName) + " play ...");
-                    return;
-                }
-                 */
-
-                // ActionsQueue
-                if (ActionsQueue.Count == 0)
-                {
-                    foreach (var oneByte in data)
-                    {
-                        ActionsQueue.Add(oneByte);
-                    }
-                    PlayForVariable();
-                }
-                else
-                {
-                    foreach (var oneByte in data)
-                    {
-                        ActionsQueue.Add(oneByte);
-                    }
-                }
+                yield break;
 
             }
+
+            if (ActionsQueue.Count == 0)
+            {
+                foreach (var oneByte in data)
+                {
+                    ActionsQueue.Add(oneByte);
+                    yield return null;
+                }
+                yield return StartCoroutine(PlayForVariable());
+            }
+            else
+            {
+                foreach (var oneByte in data)
+                {
+                    ActionsQueue.Add(oneByte);
+                    yield return null;
+                }
+            }
+
         }
 
-        public void PlayForVariable()
+        public IEnumerator PlayForVariable()
         {
             while (true)
             {
-                if (ActionsQueue.Count == 0) return;
+                if (ActionsQueue.Count == 0) yield break;
                 DoActionFromByte(ActionsQueue[0]);
                 ActionsQueue.RemoveAt(0);
+                yield return null;
             }
         }
 
@@ -208,13 +204,15 @@ namespace GameNetClient
             }
             if (oneByte == Actions[ActionCodes.SetplyrName])
             {
-                game.SetName(myID);
+                game.plyrToSet = myID;
+                if (myID == 1)
+                {
+                    Utilities.Debugger("WHAT IS YOUR NAME PLAYER ONE ?");
+                } else if (myID == 2)
+                {
+                    Utilities.Debugger("WHAT IS YOUR NAME PLAYER TWO ?");
+                }
 
-
-                // Send Name to server
-                byte[] PlyrNameByte = Encoding.ASCII.GetBytes(((byte)0).ToString() + myID.ToString() + (myID == 1 ? game.plyrOneName : game.plyrTwoName));
-                clientSocket.Send(PlyrNameByte);
-                //Console.WriteLine("Sended Name To Server");
             }
             if (oneByte == Actions[ActionCodes.PlyrChoice])
             {
@@ -238,6 +236,11 @@ namespace GameNetClient
             }
         }
 
+        public void sendUserName()
+        {
+            byte[] PlyrNameByte = Encoding.ASCII.GetBytes(((byte)0).ToString() + myID.ToString() + (myID == 1 ? game.plyrOneName : game.plyrTwoName));
+            clientSocket.Send(PlyrNameByte);
+        }
 
         public void Exit()
         {
@@ -290,7 +293,6 @@ namespace GameNetClient
 
         private void OnDisable()
         {
-            tokenSource.Cancel();
             if (clientSocket.Connected)
             {
                 clientSocket.Disconnect(false);
@@ -300,3 +302,62 @@ namespace GameNetClient
         }
     }
 }
+
+*/
+
+
+/*
+ 
+        void recResp()
+        {
+            if (clientSocket == null || !clientSocket.Connected)
+            {
+                return;
+            }
+            var buffer = new byte[2048];
+            int received = clientSocket.Receive(buffer, SocketFlags.None);
+            if (received == 0)
+            {
+                return;
+            }
+
+            var data = new byte[received];
+            Array.Copy(buffer, data, received);
+
+
+            // Nom du joueur adveresaire
+            if (data[0] == 48 && data.Length > 1)
+            {
+                string text = Encoding.ASCII.GetString(data.Skip(1).Take(data.Length - 1).ToArray());
+                if (game.plyrOneName == "")
+                {
+                    game.plyrOneName = text;
+                    Utilities.Debugger("Your enemy is : " + game.plyrOneName);
+                }
+                else if (game.plyrTwoName == "")
+                {
+                    game.plyrTwoName = text;
+                    Utilities.Debugger("Your enemy is : " + game.plyrTwoName);
+                }
+                return;
+            }
+
+            if (ActionsQueue.Count == 0)
+            {
+                foreach (var oneByte in data)
+                {
+                    ActionsQueue.Add(oneByte);
+                }
+                StartCoroutine(PlayForVariable());
+            }
+            else
+            {
+                foreach (var oneByte in data)
+                {
+                    ActionsQueue.Add(oneByte);
+                }
+            }
+
+        }
+
+*/
