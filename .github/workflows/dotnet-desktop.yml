@@ -17,10 +17,10 @@ jobs:
     runs-on: windows-latest  
 
     env:
-      Solution_Name: ProjetInfra                       
+      Solution_Name: ProjetInfra2023                       
       Test_Project_Path: Tests                
-      Wap_Project_Directory: ProjetInfra.Package 
-      Wap_Project_Path: ProjetInfra                 
+      Wap_Project_Directory: ProjetInfra2023
+      Wap_Project_Path: ProjetInfra2023                 
 
     steps:
     - name: Checkout
