@@ -34,3 +34,18 @@
   `curl -d "id=1 AND 1=1" http://yourserver.com/index.php`
 
 If you get an 403 Forbidden response, ModSecurity is working !
+
+# Deployment of Game Server and Matchmaking
+
+- Download the "GameServer" or "MatchmakingServer" release from the repo.
+- Install the downloaded zip file onto the machine.
+- Extract the downloaded zip file.
+- Install dotnet.
+- Navigate to the root of the project.
+- Use dotnet run to launch the server.
+
+# Client
+
+To make it easier to use, there will be a config file that will have the IP and connection port of the Matchmaking server. However, normally, you would need to recreate a build with the correct IP and port information without using a file.
+- Replace "SERVERIP" and "SERVERPORT" with the IP and port of the Matchmaking server.
+- Modify the downloadable client zip file so that players who download the game can get the version with the correct server information.

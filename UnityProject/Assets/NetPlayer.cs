@@ -6,17 +6,18 @@ using GameNetClient;
 using Riptide;
 using Riptide.Utils;
 using System;
+using System.IO;
 
 public class NetPlayer : Singleton<NetPlayer>
 {
     [SerializeField] string MMip;
-    [SerializeField] ushort MMport;
+    [SerializeField] string MMport;
 
     [SerializeField] string lobbyIp;
 
     [SerializeField] string ip;
     [SerializeField] ushort port;
-
+    string ipFilePath;
     [SerializeField] Button connectButton;
     [SerializeField] Button searchButton;
     [SerializeField] NameGestor nameGestor;
@@ -27,6 +28,20 @@ public class NetPlayer : Singleton<NetPlayer>
     // Start is called before the first frame update
     void Start()
     {
+        ipFilePath = Application.dataPath + "/conf";
+        Debug.Log(Application.dataPath);
+        string configContent = "";
+        if (!File.Exists(ipFilePath))
+        {
+            File.Create(ipFilePath);
+            File.WriteAllText(ipFilePath, "SERVERIP:SERVERPORT");
+        } else
+        {
+            configContent = File.ReadAllText(ipFilePath);
+        }
+        if (configContent == "SERVERIP:SERVERPORT") Debug.Log("NO IP SET");
+        MMip = configContent.Split(':')[0];
+        MMport = configContent.Split(':')[1];
         RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.Log, Debug.Log, false);
         client = new Client();
         MMclient = new Client();
