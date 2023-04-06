@@ -1,0 +1,41 @@
+# Définition de l'image Docker pour l'environnement d'exécution
+image: mcr.microsoft.com/dotnet/core/sdk:3.1
+
+# Définition des étapes de la pipeline
+stages:
+  - build
+  - test
+  - sonarqube
+  - deploy
+
+# Étape de compilation du code
+build:
+  stage: build
+  script:
+    - dotnet restore
+    - dotnet build --configuration Release
+  artifacts:
+    paths:
+      - MyApp/bin/Release/netcoreapp3.1/
+
+# Étape d'exécution des tests unitaires
+test:
+  stage: test
+  script:
+    - dotnet test --configuration Release --no-build --logger "trx;LogFileName=MyAppTests.xml"
+
+# Étape d'analyse de la qualité du code
+sonarqube:
+  stage: sonarqube
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - sonar-scanner -Dsonar.projectKey=MyApp -Dsonar.sources=. -Dsonar.host.url=https://my-sonarqube-instance.com -Dsonar.login=my-secret-token
+
+# Étape de déploiement sur l'environnement de production
+deploy:
+  stage: deploy
+  script:
+    - dotnet publish --configuration Release --output /app
+    - ssh user@production-server "sudo systemctl stop myapp.service"
+    - scp /app/* user@production-server:/var/www/myapp/
+    - ssh user@production-server "sudo systemctl start myapp.service"
