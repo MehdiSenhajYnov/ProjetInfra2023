@@ -114,10 +114,10 @@ namespace MatchMakingServer
 
 		static async void getenemy(ushort fromuser, string username) 
 		{
-			var PlyrSave = await DatabaseGestor.GetAllSavesNameByUsername("UsernamePlyrOne", username);
+			var PlyrSave = await DatabaseGestor.GetSaveByUsername("UsernamePlyrOne", username);
 			if (PlyrSave == null) 
 			{
-				PlyrSave = await DatabaseGestor.GetAllSavesNameByUsername("UsernamePlyrTwo", username);
+				PlyrSave = await DatabaseGestor.GetSaveByUsername("UsernamePlyrTwo", username);
 			}
 			if (PlyrSave == null) 
 			{
@@ -129,6 +129,46 @@ namespace MatchMakingServer
 			SendString(enemyname, fromuser, MMCodes.GET_ENEMY_NAME);
 		}
 
+		[MessageHandler((ushort)MMCodes.ASK_LOAD_SAVE, 1)]
+		private static async void LoadSaveAsked(ushort fromuser, Message message)
+		{
+			Console.WriteLine("Load save asked !");
+			string username = message.GetString();
+
+			var PlyrSave = await DatabaseGestor.GetSaveByUsername("UsernamePlyrOne", username);
+			if (PlyrSave == null) 
+			{
+				PlyrSave = await DatabaseGestor.GetSaveByUsername("UsernamePlyrTwo", username);
+			}
+			if (PlyrSave == null) 
+			{
+				Console.WriteLine("No save found for this user");
+				SendString("NOSAVEFOUND", fromuser, MMCodes.GET_LOAD_SAVE);
+				return;
+			}
+            Message mes = Message.Create(MessageSendMode.Reliable, (ushort)MMCodes.GET_LOAD_SAVE);
+            mes.Add(PlyrSave.Save);
+			mes.Add(PlyrSave.SaveRound);
+			mes.Add(PlyrSave.SaveID);
+			mes.Add(PlyrSave.UsernamePlyrOne);
+			mes.Add(PlyrSave.UsernamePlyrTwo);		
+			if (openServers.Count == 0)
+			{
+				Console.WriteLine("No server avaible");
+				SendString("NOSERVER", fromuser, MMCodes.REDIRECT_PLAYER);
+				return;
+			}
+			ushort serverID = openServers[0];
+			string ipToGive = GetIpFromId(serverID);
+			ipToGive += "L";
+			SendString(ipToGive, fromuser, MMCodes.REDIRECT_PLAYER);
+			SendBytes(PlyrSave.Save, fromuser, MMCodes.GET_LOAD_SAVE);
+			avaiblePlayers.Remove(fromuser);
+			openServers.Remove(serverID);
+			
+            server.Send(mes,serverID, true);
+			Console.WriteLine("Save loaded Send !");
+		}
 
 		public static void SendMessage(MMCodes MMCode, ushort toSend)
 		{
@@ -145,6 +185,14 @@ namespace MatchMakingServer
             server.Send(mes,toSend, true);
         }
 
+		public static void SendBytes(byte[] bytesToSend, ushort toSend, MMCodes MMCode)
+		{
+			if (server == null) return;
+			Message mes = Message.Create(MessageSendMode.Reliable, (ushort)MMCode);
+			mes.Add(bytesToSend);
+			server.Send(mes,toSend, true);
+		}
+
     }
 
 	public enum MMCodes 
@@ -155,6 +203,8 @@ namespace MatchMakingServer
 		REDIRECT_PLAYER,
 		ASK_ENEMY_NAME,
     	GET_ENEMY_NAME,
+		ASK_LOAD_SAVE,
+		GET_LOAD_SAVE,
 	}
 
 }

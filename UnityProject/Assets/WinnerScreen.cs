@@ -27,7 +27,7 @@ public class WinnerScreen : MonoBehaviour
     {
         Utilities.Instance.showScreen(ScreenGame.Winner);
         var winnerstr = message.GetString();
-        Debug.Log(winnerstr);
+        Debug.Log("WINNER ! : " + winnerstr);
         Utilities.Debugger(winnerstr);
     }
 }

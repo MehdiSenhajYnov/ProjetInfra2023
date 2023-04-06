@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Riptide;
 using Riptide.Utils;
-
+using GameNetServer;
 namespace Serveur
 {
     public class MatchMakingClient
@@ -13,7 +13,7 @@ namespace Serveur
         ushort port;
     
         public static Client? client;
-
+        public static Game game;
         public MatchMakingClient(string ip, ushort port)
         {
             this.ip = ip;
@@ -79,6 +79,19 @@ namespace Serveur
             mes.Add(stringToSend);
             client.Send(mes);
         }
+
+        [MessageHandler((ushort)MMCodes.GET_LOAD_SAVE, 1)]
+        public static void GetSaveFromServer(Message message)
+        {
+            Console.WriteLine("GetSaveFromServer");
+            byte[] savedata = message.GetBytes();
+			int oldsaveround = message.GetInt();
+			string oldSaveID = message.GetString();
+			string oldplyrOneName = message.GetString();
+			string oldplyrTwoName = message.GetString();
+            Console.WriteLine("GetSaveFromServer 2");
+            game.LoadGame(savedata, oldsaveround, oldSaveID, oldplyrOneName, oldplyrTwoName);
+        }
     }
 
 	public enum MMCodes 
@@ -86,6 +99,11 @@ namespace Serveur
 		SERVER_OPEN,
 		SERVER_CLOSED,
 		PLAYER_JOIN,
-		REDIRECT_PLAYER
+		REDIRECT_PLAYER,
+		ASK_ENEMY_NAME,
+    	GET_ENEMY_NAME,
+		ASK_LOAD_SAVE,
+		GET_LOAD_SAVE,
 	}
+
 }

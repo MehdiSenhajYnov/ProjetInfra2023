@@ -21,9 +21,9 @@ namespace MatchMakingServer
 
 
 
-        public static async Task<SavesNameDocument?> GetAllSavesNameByUsername(string whatsearch, string username)
+        public static async Task<SavesNameDocument?> GetSaveByUsername(string whatsearch, string username)
         {
-            Console.WriteLine("Getting Save By Username ...");
+            Console.WriteLine("Getting Save By Username ... what : " + whatsearch + " username : " + username);
 
             var collection = database.GetCollection<SavesNameDocument>("SaveName");
 

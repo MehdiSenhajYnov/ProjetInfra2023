@@ -50,7 +50,7 @@ public class PlyrMoves : Singleton<PlyrMoves>
         byte[] data = message.GetBytes();
         Game.Instance.UpdatePlyrsFromServer(data);
         Debug.Log("AskPlayerMove");
-        Utilities.Debugger("AskPlayerMove");
+        Utilities.Debugger("");
         Instance.ChangeMoveState(true);
         Instance.ChangeCibleState(false);
 
@@ -80,15 +80,16 @@ public class PlyrMoves : Singleton<PlyrMoves>
         var attackInfo = new byte[] {(byte)PlyrInput, (byte)CiblePlyr };
 
         Debug.Log("Send Attack " + PlyrInput + " On Cible " + CiblePlyr);
-        Utilities.Debugger("Send Attack " + PlyrInput + " On Cible " + CiblePlyr);
+        //Utilities.Debugger("Send Attack " + PlyrInput + " On Cible " + CiblePlyr);
 
         NetPlayer.SendBytes(attackInfo, whatmessage.PlyrMove);
     }
 
     public void SetCibleNames(string myName, string otherName)
     {
-        CibleOne.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().text = myName + " (YOU)";
-        CibleTwo.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().text = otherName;
+        CibleOne.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().text = "YOU";
+        //CibleTwo.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().text = otherName;
+        CibleTwo.transform.GetChild(0).GetComponent<TMPro.TMP_Text>().text = "Enemy";
 
     }
 

@@ -41,7 +41,8 @@ namespace GameNetServer
 
         public GameServer ? server {get; set; }
 
-        public void LoadSave(byte[] playersData, int oldRound, string oldSaveID) {
+        public async void LoadGame(byte[] playersData, int oldRound, string oldSaveID, string oldPlyrOneName, string oldPlyrTwoName) {
+            Console.WriteLine("Loading Game ...");
             // Load Save
             // playersData is like new byte[]{PlyrOneTypeCharacter, (byte)PlayerOne.MaxHealth, (byte)PlayerOne.Health, (byte)PlayerOne.GetUniqueValue() , PlyrTwoTypeCharacter, (byte)PlayerTwo.MaxHealth, (byte)PlayerTwo.Health, (byte)PlayerTwo.GetUniqueValue()};
             PlyrOneTypeCharacter = playersData[0];
@@ -76,9 +77,14 @@ namespace GameNetServer
             round = oldRound;
             GameLoaded = true;
             SaveID = oldSaveID;
+
+            plyrOneName = oldPlyrOneName;
+            plyrTwoName = oldPlyrTwoName;
+
+            Console.WriteLine("Game Loaded");
         }
 
-        bool GameLoaded = false;
+        public bool GameLoaded = false;
 
         public async Task GameBegin () {
 
@@ -96,6 +102,7 @@ namespace GameNetServer
                 while (!TwoPlayersConnected)
                 {
                     Thread.Sleep(250);
+                    if (GameLoaded) break;
                 }
             }
 
@@ -113,6 +120,7 @@ namespace GameNetServer
                 while (!PlayersChoseName)
                 {
                     Thread.Sleep(250);
+                    if (GameLoaded) break;
                 }
 
                 GameServer.SendStringInt(plyrTwoName, PlyrTwoTypeCharacter, GameServer.AllPlayers.Keys.ElementAt(0), whatmessage.OtherClientName);
@@ -127,37 +135,43 @@ namespace GameNetServer
 
         bool PlayersChoseName => plyrOneName != "" && plyrTwoName != "" && PlayerOne != null && PlayerTwo != null;
 
-        void WaitingWhile(bool whatWaiting) {
-            while (whatWaiting)
-            {
-                Thread.Sleep(250);
-            }
-        }
-
         public byte[] SendToPlyrChoseMove = new byte[] {5};
         public byte[]? SendToPlyrCharInfo;
         //public List<byte> SendToPlyrCharInfoList = new List<byte>();
-
+        public bool inGame;
         public async Task GameLoop() {
+            Console.WriteLine("Begin GameLoop");
 
             SendToPlyrCharInfo = new byte[]{PlyrOneTypeCharacter, (byte)PlayerOne.MaxHealth, (byte)PlayerOne.Health, (byte)PlayerOne.GetUniqueValue() , PlyrTwoTypeCharacter, (byte)PlayerTwo.MaxHealth, (byte)PlayerTwo.Health, (byte)PlayerTwo.GetUniqueValue()};
-            GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(round-1), whatmessage.UpdateAndWait);
-            
-            while (PlayerOne?.Health > 0 && PlayerTwo?.Health > 0)
+            int LastElement;
+            if (GameServer.AllPlayers.Keys.Count >= 2) {
+                LastElement = round-1;
+            } else {
+                LastElement = 0;
+            }
+
+            //GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(LastElement), whatmessage.UpdateAndWait);
+            GameServer.SendBytesToAll(SendToPlyrCharInfo, whatmessage.UpdateAndWait);
+            Console.WriteLine("Before While : " + PlayerOne?.Health + " " + PlayerTwo?.Health);
+            inGame = true;
+            while (inGame && PlayerOne?.Health > 0 && PlayerTwo?.Health > 0)
             {
-                Console.WriteLine(PlayerOne.ToString());
-                Console.WriteLine(PlayerTwo.ToString());
+                /*Console.WriteLine(PlayerOne.ToString());
+                Console.WriteLine(PlayerTwo.ToString());*/
+
+                Console.WriteLine("Play at round " + round);
 
                 if (round == 1) { 
                     PlayerOne.Special();
                     PlyrRound = PlayerOne;
-                    DisplayPlyr(PlayerOne, plyrOneName);
+                    //DisplayPlyr(PlayerOne, plyrOneName);
                 } 
                 else if (round == 2) {
                     PlayerTwo.Special();
                     PlyrRound = PlayerTwo;
-                    DisplayPlyr(PlayerTwo, plyrTwoName);
+                    //DisplayPlyr(PlayerTwo, plyrTwoName);
                 }
+                /*
                 Console.WriteLine("\n What Do you want to do?");
                 if (PlyrRound is Warrior) {
                     Console.WriteLine("1 : BaseAttack : 25 damage, if Bravery is active 15 supply damage");
@@ -171,20 +185,28 @@ namespace GameNetServer
                     Console.WriteLine("1 : BaseAttack : You will inflict damage equal to 25 + your buff, buff +3 (15 max)");
                     Console.WriteLine("2 : AlternatifAttack : 50 damge, but you take a backlash of 10 hp");
                 }
-
+                */
                 SendToPlyrCharInfo = new byte[]{PlyrOneTypeCharacter, (byte)PlayerOne.MaxHealth, (byte)PlayerOne.Health, (byte)PlayerOne.GetUniqueValue() , PlyrTwoTypeCharacter, (byte)PlayerTwo.MaxHealth, (byte)PlayerTwo.Health, (byte)PlayerTwo.GetUniqueValue()};
 
-                GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(round-1), whatmessage.AskPlayerMove);
+                try
+                {
+                    GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(round-1), whatmessage.AskPlayerMove);
+                }
+                catch (System.Exception)
+                {
+                    Console.WriteLine("Cannot send to player");
+                }
 
 
                 while (!PlyrHasChoseMove) {
-                    
+                    if (!inGame) break;
                 }
-
+                if (!inGame) break;
                 PlyrChoseMove();
 
                 SendToPlyrCharInfo = new byte[]{PlyrOneTypeCharacter, (byte)PlayerOne.MaxHealth, (byte)PlayerOne.Health, (byte)PlayerOne.GetUniqueValue() , PlyrTwoTypeCharacter, (byte)PlayerTwo.MaxHealth, (byte)PlayerTwo.Health, (byte)PlayerTwo.GetUniqueValue()};
-                GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(round-1), whatmessage.UpdateAndWait);
+                //GameServer.SendBytes(SendToPlyrCharInfo, GameServer.AllPlayers.Keys.ElementAt(LastElement), whatmessage.UpdateAndWait);
+                GameServer.SendBytesToAll(SendToPlyrCharInfo, whatmessage.UpdateAndWait);
 
 
                 if (round == 1) 
@@ -197,29 +219,60 @@ namespace GameNetServer
                 }
 
                 Console.WriteLine(PlayerOne.Health+ " " + PlayerTwo.Health);
-                //File.WriteAllText("SaveTemp.txt", plyrOneName + "\n" + SaveID);
-                //File.WriteAllBytes("SaveTemp.bin", SendToPlyrCharInfo);
-                SaveID = await DatabaseGestor.AddSave(plyrOneName, plyrTwoName, SendToPlyrCharInfo, SaveID, round);
+
+                //ENABLE IF SAVE SYSTEM WORK SaveID = await DatabaseGestor.AddSave(plyrOneName, plyrTwoName, SendToPlyrCharInfo, SaveID, round);
                 if (GameLoaded) {
+                    Console.WriteLine("GameLoaded, Saved with parameters : " + plyrOneName + " " + plyrTwoName + " " + SendToPlyrCharInfo + " " + SaveID + " " + round);
+                    
                     server?.CloseAllSockets();
                     return;
+                    
                 }
-            }
-            if (PlayerOne?.Health == 0 && PlayerTwo?.Health > 0) {
-                Console.WriteLine(plyrTwoName + " WIN!");
-                GameServer.SendStringToAll(plyrTwoName + " WIN!", whatmessage.Winner);
 
-            } else if(PlayerOne?.Health > 0 && PlayerTwo?.Health == 0) {
-                Console.WriteLine(plyrOneName + " WIN!");
-                GameServer.SendStringToAll(plyrOneName + " WIN!", whatmessage.Winner);
-            } else if (PlayerOne?.Health == 0 && PlayerTwo?.Health == 0) {
-                Console.WriteLine("DRAW!");
-                GameServer.SendStringToAll("DRAW!", whatmessage.Winner);
+                string plyrOneWinMessage = "";
+                string plyrTwoWinMessage = "";
+                // WIN CONDITION
+                if (PlayerOne?.Health == 0 && PlayerTwo?.Health > 0) {
+                    Console.WriteLine(plyrTwoName + " WIN!");
+                    //GameServer.SendStringToAll(plyrTwoName + " WIN!", whatmessage.Winner);
+                    plyrOneWinMessage = "YOU LOSE!";
+                    plyrTwoWinMessage = "YOU WIN!";
+                    SendWinner(plyrOneWinMessage, plyrTwoWinMessage);
+                    break;
+                } else if(PlayerOne?.Health > 0 && PlayerTwo?.Health == 0) {
+                    Console.WriteLine(plyrOneName + " WIN!");
+                    //GameServer.SendStringToAll(plyrOneName + " WIN!", whatmessage.Winner);
+                    plyrOneWinMessage = "YOU WIN!";
+                    plyrTwoWinMessage = "YOU LOSE!";
+                    SendWinner(plyrOneWinMessage, plyrTwoWinMessage);
+                    break;
+                } else if (PlayerOne?.Health == 0 && PlayerTwo?.Health == 0) {
+                    Console.WriteLine("DRAW!");
+                    GameServer.SendStringToAll("DRAW!", whatmessage.Winner);
+                    break;
+                }
+
+
+
             }
 
             Console.WriteLine("Fini!");
             server?.CloseAllSockets();
 
+
+        }
+
+        public static void SendWinner(string plyrOneWinMessage, string plyrTwoWinMessage) {
+            if (plyrOneWinMessage != "" && GameServer.AllPlayers.ContainsValue(1))
+            {
+                GameServer.SendString(plyrOneWinMessage, GetKeyFromValue(GameServer.AllPlayers,1), whatmessage.Winner);
+            }
+            if (plyrTwoWinMessage != "" && GameServer.AllPlayers.ContainsValue(2))
+            {
+                GameServer.SendString(plyrTwoWinMessage, GetKeyFromValue(GameServer.AllPlayers,2), whatmessage.Winner);
+            }
+
+            GameServer.currentGame.inGame = false;
 
         }
 
@@ -362,6 +415,12 @@ namespace GameNetServer
             {
                 Console.WriteLine(paladinASCII[i]);
             }
+        }
+
+        public static ushort GetKeyFromValue(SortedDictionary<ushort, int> dictionary, int value)
+        {
+            var result = dictionary.FirstOrDefault(x => x.Value == value);
+            return result.Key;
         }
     }
     

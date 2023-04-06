@@ -77,22 +77,23 @@ namespace MatchMakingServer
             Console.WriteLine("Adding Save ...");
             if (string.IsNullOrEmpty(oldSaveID))
             {
-                string result = await NewSave(usernameOne, usernameTwo, newSave, SaveRound);
-                Console.WriteLine("ADDSAVE End SaveID: " + result);
-                return result;
+                string resultAlt = await NewSave(usernameOne, usernameTwo, newSave, SaveRound);
+                Console.WriteLine("ADDSAVE End SaveID: " + resultAlt);
+                return resultAlt;
             }
             Console.WriteLine("Checking if SaveID exist ...");
             var saves = await GetSaveNameByID(oldSaveID);
-            if (saves == null) {
-                string result = await NewSave(usernameOne, usernameTwo, newSave, SaveRound);
-                Console.WriteLine("ADDSAVE End SaveID: " + result);
-                return result;
-            } else {
-                UpdateSave(usernameOne, usernameTwo, newSave, oldSaveID, SaveRound);
+
+            if (saves != null) {
+                DeleteSave(oldSaveID);
             }
-            Console.WriteLine("ADDSAVE End SaveID: " + oldSaveID);
-            return oldSaveID;
+
+            string result = await NewSave(usernameOne, usernameTwo, newSave, SaveRound);
+            Console.WriteLine("ADDSAVE End SaveID: " + result);
+            return result;
+
         }
+/*
 
         public static async void UpdateSave(string usernameOne, string usernameTwo, byte[] newSave, string oldSaveName, int SaveRound)
         {
@@ -103,11 +104,26 @@ namespace MatchMakingServer
 
 
             var filter = Builders<SavesNameDocument>.Filter.Eq("SaveName", oldSaveName);
-            var update = Builders<SavesNameDocument>.Update.Set("Save", newSave);
+            //var update = Builders<SavesNameDocument>.Update.Set("Save", newSave);
+
+            var update = Builders<SavesNameDocument>.Update.Combine(
+                Builders<SavesNameDocument>.Update.Set(s => s.Save, newSave),
+                Builders<SavesNameDocument>.Update.Set(s => s.SaveRound, SaveRound)
+            );
 
             var result = await collection.UpdateOneAsync(filter, update);
+            Console.WriteLine("UpdateSave End");
         }
 
+*/
+        public static async void DeleteSave(string saveID) 
+        {
+            Console.WriteLine("Getting All Saves Name by SaveID ...");
+            var collection = database.GetCollection<SavesNameDocument>("SaveName");
+
+            var filter = Builders<SavesNameDocument>.Filter.Eq("SaveID", saveID);
+            var documents = await collection.DeleteOneAsync(filter);
+        }
 
         public static async Task<string> NewSave(string usernameOne, string usernameTwo, byte[] newSave, int SaveRound) 
         {

@@ -97,8 +97,8 @@ namespace GameNetClient
 
         public void PlyrGetAtkInput(byte TypeOfPlyrInput) {
 
-            Utilities.Debugger(PlayerOne.ToString());
-            Utilities.Debugger(PlayerTwo.ToString());
+            //Utilities.Debugger(PlayerOne.ToString());
+            //Utilities.Debugger(PlayerTwo.ToString());
         
 
             if (PlyrId == 1) {
@@ -115,10 +115,11 @@ namespace GameNetClient
 
 
         public void CibleOfAtkInput() {
+            /*
             Utilities.Debugger("Your target?");
             Utilities.Debugger("1 : PlayerOne");
             Utilities.Debugger("2 : PlayerTwo");
-            
+            */
         }
 
         public void choiceOneOrTwo() {
@@ -159,27 +160,29 @@ namespace GameNetClient
             {
                 Utilities.Debugger(shieldASCII[i] + mageASCII[i] + paladinASCII[i]);
             }*/
+            /*/
             Utilities.Debugger(PlyrName + " CHOOSE YOUR CHARACTER");
             Utilities.Debugger("1 : Warrior");
             Utilities.Debugger("2 : Cleric");
             Utilities.Debugger("3 : Paladin");
+            */
             string plyrInput = "";
             //plyrInput = Console.ReadLine();
             plyrInput = plyrInput != null ? plyrInput : plyrInput = "";
             if (plyrInput == "1") {
-                Utilities.Debugger("Your choice : Warrior\n"); 
+                //Utilities.Debugger("Your choice : Warrior\n"); 
                 return 1;
             }
             else if(plyrInput == "2") {
-                Utilities.Debugger("Your choice : Cleric\n"); 
+                //Utilities.Debugger("Your choice : Cleric\n"); 
                 return 2;
             }
             else if(plyrInput == "3") {
-                Utilities.Debugger("Your Choice : Paladin\n"); 
+                //Utilities.Debugger("Your Choice : Paladin\n"); 
                 return 3;
             }
             else {
-                Utilities.Debugger("Not valid input\n");
+                //Utilities.Debugger("Not valid input\n");
                 return PlyrChoice(PlyrName);    
             }
 
@@ -187,13 +190,13 @@ namespace GameNetClient
 
         public void DisplayPlyr(byte plyrToDisplay, string PlyrName) {
             if (plyrToDisplay == 1) {
-                Utilities.Debugger(PlyrName + '\n');
+                //Utilities.Debugger(PlyrName + '\n');
                 PrintWarrior();
             } else if (plyrToDisplay == 2) {
-                Utilities.Debugger(PlyrName + '\n');
+                //Utilities.Debugger(PlyrName + '\n');
                 PrintCleric();
             } else if (plyrToDisplay == 3) {
-                Utilities.Debugger(PlyrName + '\n');
+                //Utilities.Debugger(PlyrName + '\n');
                 PrintPaladin();
             }
         }
@@ -245,10 +248,14 @@ namespace GameNetClient
                 HealthTwo.sizeDelta = new Vector2(PlayerOne.Health * 165 / PlayerOne.MaxHealth, 10);
                 HealthOne.sizeDelta = new Vector2(PlayerTwo.Health * 165 / PlayerTwo.MaxHealth, 10);
             }
+
+            PlyrMoves.Instance.SetAtkDescription();
+
         }
 
         public void SetPlyrImage(int ImageToSet, Image PlyrOneImage, Image PlyrTwoImage)
         {
+            Debug.Log("I Have To Set int " + ImageToSet + " my plyr id is " + PlyrId);
             if (PlyrId == 1)
             {
                 PlyrOneImage.sprite = charSprites[ImageToSet];
@@ -259,6 +266,7 @@ namespace GameNetClient
             }
         }
         public void DisplayAtkChoiseOfCharacter(byte characterToUse) {
+            /*
             Utilities.Debugger("\n What Do you want to do?");
             if (characterToUse == 1) {
                 Utilities.Debugger("1 : BaseAttack : 25 damage, if Bravery is active 15 supply damage");
@@ -272,6 +280,7 @@ namespace GameNetClient
                 Utilities.Debugger("1 : BaseAttack : You will inflict damage equal to 25 + your buff, buff +3 (15 max)");
                 Utilities.Debugger("2 : AlternatifAttack : 50 damge, but you take a backlash of 10 hp");
             }
+            */
         }
 
 

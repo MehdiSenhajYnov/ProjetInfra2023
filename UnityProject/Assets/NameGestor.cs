@@ -64,7 +64,7 @@ public class NameGestor : MonoBehaviour
         {
             Game.Instance.plyrOneName = text;
             Debug.Log("Your enemy is : " + Game.Instance.plyrOneName);
-            Utilities.Debugger("Your enemy is : " + Game.Instance.plyrOneName);
+            //Utilities.Debugger("Your enemy is : " + Game.Instance.plyrOneName);
             Game.Instance.SetPlyrImage(charType, Game.Instance.GetPlayerOneSprite(), Game.Instance.GetPlayerTwoSprite());
             Game.Instance.SetPlyrImage(Game.Instance.MyPlayerClass - 1, Game.Instance.GetPlayerTwoSprite(), Game.Instance.GetPlayerOneSprite());
 
@@ -74,7 +74,7 @@ public class NameGestor : MonoBehaviour
         {
             Game.Instance.plyrTwoName = text;
             Debug.Log("Your enemy is : " + Game.Instance.plyrTwoName);
-            Utilities.Debugger("Your enemy is : " + Game.Instance.plyrTwoName);
+            //Utilities.Debugger("Your enemy is : " + Game.Instance.plyrTwoName);
             Game.Instance.SetPlyrImage(charType, Game.Instance.GetPlayerTwoSprite(), Game.Instance.GetPlayerOneSprite());
             Game.Instance.SetPlyrImage(Game.Instance.MyPlayerClass - 1, Game.Instance.GetPlayerOneSprite(), Game.Instance.GetPlayerTwoSprite());
 

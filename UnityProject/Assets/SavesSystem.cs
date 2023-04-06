@@ -22,16 +22,13 @@ public class SavesSystem : Singleton<SavesSystem>
     
     void Start()
     {
-        if (PlayerPrefs.HasKey("PlayerUniqueId"))
-        {
-            PlayerUniqueId = PlayerPrefs.GetString("PlayerUniqueId");
-        } else
-        {
-            PlayerUniqueId = Guid.NewGuid().ToString();
-            PlayerPrefs.SetString("PlayerUniqueId", PlayerUniqueId);
-        }
+        // ENABLE IF SAVE SYSTEM WORK continueButton.onClick.AddListener(askLoad);
     }
 
+    void askLoad()
+    {
+        // ENABLE IF SAVE SYSTEM WORK NetPlayer.MMSendString(PlayerUniqueId, MMCodes.ASK_LOAD_SAVE);
+    }
 
     [MessageHandler((ushort)MMCodes.GET_ENEMY_NAME, 1)]
     public static void GetServerToConnect(Message message)
@@ -47,8 +44,20 @@ public class SavesSystem : Singleton<SavesSystem>
 
     private void OnEnable()
     {
+        /* ENABLE IF SAVE SYSTEM WORK 
+        if (PlayerPrefs.HasKey("PlayerUniqueId"))
+        {
+            PlayerUniqueId = PlayerPrefs.GetString("PlayerUniqueId");
+        }
+        else
+        {
+            PlayerUniqueId = Guid.NewGuid().ToString();
+            PlayerPrefs.SetString("PlayerUniqueId", PlayerUniqueId);
+        }
+        */
+        PlayerUniqueId = Guid.NewGuid().ToString();
         continueButton.interactable = false;
-        NetPlayer.MMSendString(PlayerUniqueId,MMCodes.ASK_ENEMY_NAME);
+        // ENABLE IF SAVE SYSTEM WORK NetPlayer.MMSendString(PlayerUniqueId,MMCodes.ASK_ENEMY_NAME);
     }
 
     // Update is called once per frame

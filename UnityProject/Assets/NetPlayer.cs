@@ -39,7 +39,6 @@ public class NetPlayer : Singleton<NetPlayer>
         client.Connected += (s, e) => onGameServerConnected();
         client.ConnectionFailed += (s, e) => { connectButton.interactable = true; };
         client.Disconnected += (s, e) => onDisconnected();
-
     }
 
     private void launchSearchPlayer()
@@ -54,10 +53,13 @@ public class NetPlayer : Singleton<NetPlayer>
         connectButton.interactable = false;
     }
 
+    bool HaveToLoad;
+
     void connectToServer(string ipToConnect)
     {
         client.Connect(ipToConnect);
         connectButton.interactable = false;
+        
     }
 
     private void FixedUpdate()
@@ -85,13 +87,25 @@ public class NetPlayer : Singleton<NetPlayer>
         Debug.Log("MatchMaking Joined !");
         Debug.Log("Message PLAYER_JOIN Sended !");
         Utilities.Instance.showScreen(ScreenGame.Menu);
-        //TOADD MMSendMessage(MMCodes.PLAYER_JOIN);
+
+        // Can be on OnSearchButtonClicked
+        Utilities.Debugger("Waiting for another player ...");
+        MMSendMessage(MMCodes.PLAYER_JOIN);
     }
 
     private void onGameServerConnected()
     {
         connectButton.interactable = false;
-        Utilities.Instance.showScreen(ScreenGame.Login);
+        if (HaveToLoad)
+        {
+            Utilities.Debugger("");
+            Utilities.Instance.showScreen(ScreenGame.Game);
+        }
+        else
+        {
+            Utilities.Debugger("");
+            Utilities.Instance.showScreen(ScreenGame.Login);
+        }
 
         Debug.Log("MY CONNECTED !!");
         SendString("Hello Server !", whatmessage.welcome);
@@ -122,20 +136,41 @@ public class NetPlayer : Singleton<NetPlayer>
     public static void GetServerToConnect(Message message)
     {
         string ipToConnect = message.GetString();
+        if (ipToConnect == "NOSERVER")
+        {
+            Instance.connectButton.interactable = true;
+        }
+        if (ipToConnect.EndsWith("L"))
+        {
+            Instance.HaveToLoad = true;
+            ipToConnect = ipToConnect.Substring(0, ipToConnect.Length-1);
+        }
         Instance.lobbyIp = ipToConnect;
         Instance.connectToServer($"{ipToConnect}:7777");
     }
+    
+    [MessageHandler((ushort)MMCodes.GET_LOAD_SAVE, 1)]
+    public static void GetSaveFromMM(Message message)
+    {
+        byte[] data = message.GetBytes();
+        Game.Instance.UpdatePlyrsFromServer(data);
+
+        //Debug.Log("Update Loaded from server");
+        //Utilities.Debugger("Update Loaded from server");
+    }
+
 
 
 
     [MessageHandler((ushort)whatmessage.UpdateAndWait)]
     public static void UpdatePlayersInfo(Message message)
     {
+        
         byte[] data = message.GetBytes();
         Game.Instance.UpdatePlyrsFromServer(data);
 
         Debug.Log("Update and wait");
-        Utilities.Debugger("Update and wait");
+        Utilities.Debugger("Enemy's turn");
     }
 
 
@@ -155,9 +190,9 @@ public class NetPlayer : Singleton<NetPlayer>
         }
 
         Debug.Log("PlyrNameAsked");
-        Utilities.Debugger("PlyrNameAsked");
-
-        NetPlayer.SendString(SavesSystem.Instance.PlayerUniqueId, whatmessage.clientname);
+        //Utilities.Debugger("PlyrNameAsked");
+        Game.Instance.CheckName(SavesSystem.Instance.PlayerUniqueId);
+        SendString(SavesSystem.Instance.PlayerUniqueId, whatmessage.clientname);
         
     }
 
@@ -173,6 +208,7 @@ public class NetPlayer : Singleton<NetPlayer>
         if (MMclient == null) return;
         Message mes = Message.Create(MessageSendMode.Reliable, (ushort)MMCode);
         mes.Add(strToSend);
+        Debug.Log("i send strToSend : " + strToSend);
         MMclient.Send(mes);
     }
 
@@ -198,4 +234,6 @@ public enum MMCodes
     REDIRECT_PLAYER,
     ASK_ENEMY_NAME,
     GET_ENEMY_NAME,
+    ASK_LOAD_SAVE,
+    GET_LOAD_SAVE,
 }

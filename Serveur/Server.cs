@@ -18,8 +18,6 @@ namespace GameNetServer
         //public readonly List<Player> players = new List<Player>();
         //public static List<int> AllPlayers = new List<int>();
         
-        public Socket? serverSocket;
-        public Socket? current;
         public byte[] actionsCode = new byte[1];
         //public int dataSent;
 
@@ -63,13 +61,25 @@ namespace GameNetServer
         {
 
             ServerDisconnectedEventArgs discArg = (ServerDisconnectedEventArgs)e;
-            AllPlayers.Remove(discArg.Client.Id);
+            // DISABLE THIS IF WHEN ADD SAVE SYSTEM
             Console.WriteLine("Player Disconnected : " + discArg.Client.Id + " Plyrs Count : " + AllPlayers.Count);
+
+            if (AllPlayers.ContainsKey(discArg.Client.Id)) {
+                if (AllPlayers[discArg.Client.Id] == 1) {
+                    Game.SendWinner("YOU LOSE!", "YOU WIN!");
+                } else if (AllPlayers[discArg.Client.Id] == 2) {
+                    Game.SendWinner("YOU WIN!", "YOU LOSE!");
+                }
+            }
+
+            AllPlayers.Remove(discArg.Client.Id);
+
             return;
         }
 
         void onconnect(object? sender, EventArgs e)
         {
+            if (currentGame != null && currentGame.GameLoaded) return;
             ServerConnectedEventArgs connArg = (ServerConnectedEventArgs)e;
 
 
@@ -112,6 +122,9 @@ namespace GameNetServer
             Console.WriteLine("USERNAME : "+ newPlyrName + " ID : " + idOfPlyrWhoSend );
 
             if (currentGame == null) return;
+            if (currentGame.GameLoaded) {
+                return;
+            }
 
             if (idOfPlyrWhoSend == 1) {
                 currentGame.plyrOneName = newPlyrName;
@@ -191,6 +204,13 @@ namespace GameNetServer
             server.Send(mes, toReceiver);
         }
 
+        public static void SendBytesToAll(byte[] bytesToSend, whatmessage messageSendMode)
+        {
+            if (server == null) return;
+            Message mes = Message.Create(MessageSendMode.Reliable, (ushort)messageSendMode);
+            mes.Add(bytesToSend);
+            server.SendToAll(mes);
+        }
 
         public static string AmountInWords(double amount)
         {
