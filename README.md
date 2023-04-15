@@ -15,20 +15,20 @@
 - Extract the `web_server` archive and upload its content on your server
 - From the `web_server` directory, you can launch the web server with the command `node server.js`
 
-##WAF with ModSecurity-Nginx Module:
+## WAF with ModSecurity-Nginx Module:
 
 - Make the script runnable with `chmod +x install.sh`
 - Execute `./install.sh` as **sudoer**
 - Check the installation with `/usr/local/nginx/sbin/nginx -t`
 
-#Nginx configuration:
+# Nginx configuration:
 
 - Go to configuration file `/usr/local/nginx/conf/nginx.conf`
 - Replace the variable `<NOM_DU_SERVEUR_WEB>` with Web server hostname/IP adress
 - Replace the variable `<IP_DE_InterfaceWeb>` with the proxy target IP adress
 - reload Nginx with `sudo systemctl restart nginx`
 
-#ModSecurity Test:
+# ModSecurity Test:
 
 - You can test if ModSecurity is working by using the following command:
   `curl -d "id=1 AND 1=1" http://yourserver.com/index.php`
@@ -47,5 +47,7 @@ If you get an 403 Forbidden response, ModSecurity is working !
 # Client
 
 To make it easier to use, there will be a config file that will have the IP and connection port of the Matchmaking server. However, normally, you would need to recreate a build with the correct IP and port information without using a file.
+- Go to "Infra_Data" folder
+- Open "conf" file with a text editor
 - Replace "SERVERIP" and "SERVERPORT" with the IP and port of the Matchmaking server.
 - Modify the downloadable client zip file so that players who download the game can get the version with the correct server information.
