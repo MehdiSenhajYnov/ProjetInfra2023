@@ -1,12 +1,12 @@
-##ONLINE GAME PROJECT
+## ONLINE GAME PROJECT
 
-###DATABASE
+### DATABASE
 
 - Upload the content of the `/utils/db` directory on your dedicated server
 - Execute `db-server_init.sh` as sudoer
 - You have access to the db with the command `mongosh`
 
-###WEB SERVER
+### WEB SERVER
 
 - Upload the content of `/utils/web` on your dedicated server
 - Execute `web-server_init.sh` as sudoer
